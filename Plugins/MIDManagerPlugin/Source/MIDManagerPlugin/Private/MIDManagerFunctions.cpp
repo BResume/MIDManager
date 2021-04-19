@@ -7,6 +7,7 @@ bool UMIDManagerFunctions::CreateMID(UPrimitiveComponent* InComp, FMIDWrapper In
 {
 	if (InComp)
 	{
+		//Run the structs init method.
 		InMID.Initialize(InComp, DynMaterial);
 		OutError = "Initialized!";
 		return ApplyMIDs(InMID,OutError);
@@ -19,6 +20,7 @@ bool UMIDManagerFunctions::ApplyMIDs(FMIDWrapper InMID, FString& OutError)
 {
 	if (InMID.IsInitialized())
 	{
+		//Get all materials and apply mid based on settings.
 		for (int32 x = 0; x < InMID.GetCurrentComponent()->GetNumMaterials(); x++)
 		{
 			ApplyMID(InMID, x, OutError);
@@ -37,6 +39,7 @@ bool UMIDManagerFunctions::ApplyMID(FMIDWrapper InMID, int32 Index,FString& OutE
 		OutError = "MID is not initialized!";
 		return false;
 	}
+	//Reapply all MID values and set the material index.
 	InMID.ApplyScalars();
 	InMID.ApplyTextures();
 	InMID.ApplyColors();

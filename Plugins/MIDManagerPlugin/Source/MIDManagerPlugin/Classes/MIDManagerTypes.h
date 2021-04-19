@@ -112,6 +112,7 @@ public:
 
 	/**
 	 * This can be used to force a specific index for the MID. Leave at <0 to apply to all materials.
+	 * DEPRECATED
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FMIDWrapper")
 		int32 OverrideIndex;

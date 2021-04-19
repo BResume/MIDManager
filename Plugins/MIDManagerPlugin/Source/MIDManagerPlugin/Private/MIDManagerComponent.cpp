@@ -30,24 +30,27 @@ void UMIDManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	// ...
 }
 
-void UMIDManagerComponent::Server_MIDChange(UPrimitiveComponent* InComp, FMIDWrapper InMID)
+void UMIDManagerComponent::Server_MIDChange_Implementation(UPrimitiveComponent* InComp, FMIDWrapper InMID)
 {
 	if (InComp)
 	{
-		CurrentMID[InComp] = InMID;
-		if (GetOwner()->GetLocalRole() >= ROLE_Authority)
+		CurrentMID.Add(InComp,InMID);
+		if (!GetOwner()->GetNetMode() == NM_DedicatedServer)
 		{
+			//Only run changes if not a dedicated server. You can remove this condition if needed, but it shouldn't be necessary as this is purely visual.
 			DoMIDChange(InComp);
 		}
 		Multicast_MIDChange(InComp,InMID);
 	}
 }
 
-void UMIDManagerComponent::Multicast_MIDChange(UPrimitiveComponent* InComp, FMIDWrapper InMID)
+bool UMIDManagerComponent::Server_MIDChange_Validate(UPrimitiveComponent* InComp, FMIDWrapper InMID){return true;}
+
+void UMIDManagerComponent::Multicast_MIDChange_Implementation(UPrimitiveComponent* InComp, FMIDWrapper InMID)
 {
 	if (InComp)
 	{
-		CurrentMID[InComp] = InMID;
+		CurrentMID.Add(InComp,InMID);
 		DoMIDChange(InComp);
 	}
 }
@@ -57,6 +60,7 @@ void UMIDManagerComponent::DoMIDChange(UPrimitiveComponent* InComp )
 	FString temp;
 	if (InComp)
 	{
+		//Lazily reinit MID each time. You 'might' be able to optimize this by checking and applying updates, but I doubt it.
 		UMIDManagerFunctions::CreateMID(InComp,GetMIDForComponent(InComp),nullptr,temp);
 	}
 }
@@ -66,8 +70,9 @@ void UMIDManagerComponent::ChangeMIDs(UPrimitiveComponent* InComp, FDataTableRow
 	if (InComp)
 	{
 		const UDataTable* table = InMIDTable.DataTable;
-		if (table)
+		if (table && InMIDTable.RowName != "None" && InMIDTable.RowName != "")
 		{
+			//Validate everything, then start the changes.
 			SetMIDs(InComp, *table->FindRow<FMIDWrapper>(InMIDTable.RowName, ""));
 		}
 	}
@@ -75,6 +80,7 @@ void UMIDManagerComponent::ChangeMIDs(UPrimitiveComponent* InComp, FDataTableRow
 
 void UMIDManagerComponent::SetMIDs(UPrimitiveComponent* InComp, FMIDWrapper InMID)
 {
-	CurrentMID[InComp] = InMID;
+	//Set our MID value, then start our change on the server.
+	CurrentMID.Add(InComp,InMID);
 	Server_MIDChange(InComp,GetMIDForComponent(InComp));
 }
